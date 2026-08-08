@@ -191,6 +191,14 @@ async function startServer() {
   // SEC-009: Limit request body size
   app.use(express.json({ limit: '1mb' }));
 
+  // Path normalization for Vercel / serverless deployments
+  app.use((req: any, res: any, next: any) => {
+    if (req.url && !req.url.startsWith('/api') && (req.url.startsWith('/auth') || req.url.startsWith('/jobs') || req.url.startsWith('/reminders') || req.url.startsWith('/profile') || req.url.startsWith('/cv') || req.url.startsWith('/upload'))) {
+      req.url = '/api' + req.url;
+    }
+    next();
+  });
+
   // SEC-003: Rate limiting for auth endpoints
   const authLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 menit

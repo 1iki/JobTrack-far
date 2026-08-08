@@ -22,26 +22,38 @@ function MainApp() {
   const handleAcceptTerms = async () => {
     try {
       const token = localStorage.getItem('jobtrack_auth_token');
+      if (!token) {
+        updateUser({ acceptedTerms: true });
+        return;
+      }
       const res = await fetch('/api/auth/accept-terms', {
         method: 'POST',
-        headers: { Authorization: `Bearer ${token}` }
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
       });
       if (res.ok) {
         updateUser({ acceptedTerms: true });
         notifySuccess('Terima kasih telah menyetujui Syarat & Ketentuan Layanan.', 'Persetujuan Berhasil');
+      } else {
+        updateUser({ acceptedTerms: true });
       }
     } catch (e) {
       console.error('Failed to accept terms:', e);
+      updateUser({ acceptedTerms: true });
     }
   };
 
   const handleDeclineTerms = async () => {
     try {
       const token = localStorage.getItem('jobtrack_auth_token');
-      await fetch('/api/auth/account', {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      if (token) {
+        await fetch('/api/auth/account', {
+          method: 'DELETE',
+          headers: { Authorization: `Bearer ${token}` }
+        });
+      }
     } catch (e) {
       console.error('Failed to delete account:', e);
     } finally {
