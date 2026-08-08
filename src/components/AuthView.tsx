@@ -66,6 +66,24 @@ export function AuthView({ onLogin }: { onLogin: (user: User, token: string) => 
     }
   }, []);
 
+  const parseApiResponse = async (res: Response) => {
+    const contentType = res.headers.get('content-type') || '';
+    if (contentType.includes('application/json')) {
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Autentikasi Google gagal');
+      }
+      return data;
+    } else {
+      const text = await res.text();
+      throw new Error(
+        res.status === 500 || text.includes('Server Error')
+          ? 'Server mengalami kendala (500 Error). Silakan periksa MONGODB_URI & Network Access di MongoDB Atlas.'
+          : 'Terjadi kesalahan sistem pada server.'
+      );
+    }
+  };
+
   const handleGoogleCredential = async (credential: string) => {
     setError(null);
     setLoading(true);
@@ -75,10 +93,7 @@ export function AuthView({ onLogin }: { onLogin: (user: User, token: string) => 
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ credential })
       });
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || 'Autentikasi Google gagal');
-      }
+      const data = await parseApiResponse(res);
       onLogin(data.user, data.token);
     } catch (err: any) {
       setError(err.message || 'Gagal login dengan Google');
@@ -96,10 +111,7 @@ export function AuthView({ onLogin }: { onLogin: (user: User, token: string) => 
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ accessToken })
       });
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || 'Autentikasi Google gagal');
-      }
+      const data = await parseApiResponse(res);
       onLogin(data.user, data.token);
     } catch (err: any) {
       setError(err.message || 'Gagal login dengan Google');
@@ -126,10 +138,7 @@ export function AuthView({ onLogin }: { onLogin: (user: User, token: string) => 
           }
         })
       });
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data.error || 'Autentikasi Google gagal');
-      }
+      const data = await parseApiResponse(res);
       onLogin(data.user, data.token);
     } catch (err: any) {
       setError(err.message || 'Gagal login dengan Google');

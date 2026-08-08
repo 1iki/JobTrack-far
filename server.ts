@@ -759,7 +759,8 @@ const Reminder = mongoose.model('Reminder', reminderSchema);
   });
 
   // Vite middleware / static serving for local development
-  if (!process.env.VERCEL) {
+  const isServerless = !!(process.env.VERCEL || process.env.NOW_REGION || process.env.VERCEL_ENV || process.env.AWS_LAMBDA_FUNCTION_NAME);
+  if (!isServerless) {
     const PORT = Number(process.env.PORT) || 3000;
     if (process.env.NODE_ENV !== "production") {
       import('vite').then(async ({ createServer: createViteServer }) => {
