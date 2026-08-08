@@ -18,6 +18,7 @@ async function ensureDBConnected() {
     await mongoose.connect(mongoUri, { dbName: 'JobTrackerV1', serverSelectionTimeoutMS: 5000 });
   } else {
     console.warn('WARNING: MONGODB_URI is not set in environment!');
+    throw new Error('MONGODB_URI environment variable is not configured in Vercel environment.');
   }
 }
 
