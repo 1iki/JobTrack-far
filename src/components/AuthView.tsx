@@ -49,8 +49,8 @@ export function AuthView({ onLogin }: { onLogin: (user: User, token: string) => 
 
   useEffect(() => {
     // Initialize Google GIS if available
-    const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || '1082987541235-placeholder.apps.googleusercontent.com';
-    if (typeof window !== 'undefined' && window.google?.accounts?.id) {
+    const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+    if (clientId && typeof window !== 'undefined' && window.google?.accounts?.id) {
       try {
         window.google.accounts.id.initialize({
           client_id: clientId,
@@ -120,73 +120,72 @@ export function AuthView({ onLogin }: { onLogin: (user: User, token: string) => 
     }
   };
 
-  const handleGoogleDemoLogin = async (customEmail?: string, customName?: string) => {
-    setError(null);
-    setLoading(true);
-    try {
-      const demoEmail = customEmail || 'fachri.adityarizky@gmail.com';
-      const demoName = customName || 'Fachri Aditya Rizky (Google Account)';
-      const res = await fetch('/api/auth/google', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          googleUser: {
-            email: demoEmail,
-            name: demoName,
-            picture: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=150&q=80',
-            googleId: 'google_user_fachri_123'
-          }
-        })
-      });
-      const data = await parseApiResponse(res);
-      onLogin(data.user, data.token);
-    } catch (err: any) {
-      setError(err.message || 'Gagal login dengan Google');
-    } finally {
-      setLoading(false);
-    }
-  };
-
   const handleGoogleClick = () => {
     setError(null);
     const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
+    if (!clientId) {
+      setError('VITE_GOOGLE_CLIENT_ID belum dikonfigurasi di Environment Variables.');
+      return;
+    }
+
+    if (typeof window === 'undefined' || !window.google?.accounts) {
+      setError('Layanan Google Sign-In belum siap. Pastikan koneksi internet stabil atau nonaktifkan ad-blocker.');
+      return;
+    }
+
+    setLoading(true);
+
     // 1. Try Google OAuth 2.0 Popup Client if client_id is available
-    if (clientId && window.google?.accounts?.oauth2) {
+    if (window.google.accounts.oauth2) {
       try {
         const client = window.google.accounts.oauth2.initTokenClient({
           client_id: clientId,
           scope: 'email profile openid',
           callback: async (tokenResponse: any) => {
-            if (tokenResponse.access_token) {
+            if (tokenResponse && tokenResponse.access_token) {
               await handleGoogleAccessToken(tokenResponse.access_token);
             } else {
-              await handleGoogleDemoLogin();
+              setLoading(false);
+              if (tokenResponse?.error && tokenResponse.error !== 'popup_closed_by_user') {
+                setError(`Autentikasi Google dibatalkan: ${tokenResponse.error}`);
+              }
             }
           },
-          error_callback: () => {
-            handleGoogleDemoLogin();
+          error_callback: (err: any) => {
+            console.warn('OAuth2 popup error/closed:', err);
+            setLoading(false);
           }
         });
         client.requestAccessToken({ prompt: 'consent' });
         return;
       } catch (e) {
-        console.warn('OAuth2 popup notice:', e);
+        console.warn('OAuth2 popup init notice:', e);
+        setLoading(false);
+        setError('Gagal membuka jendela login Google.');
+        return;
       }
     }
 
     // 2. Try Google One Tap if client_id is available
-    if (clientId && window.google?.accounts?.id) {
-      window.google.accounts.id.prompt((notification: any) => {
-        if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
-          handleGoogleDemoLogin();
-        }
-      });
-      return;
+    if (window.google.accounts.id) {
+      try {
+        window.google.accounts.id.prompt((notification: any) => {
+          if (notification.isNotDisplayed() || notification.isSkippedMoment() || notification.isDismissedMoment()) {
+            setLoading(false);
+          }
+        });
+        return;
+      } catch (e) {
+        console.warn('One Tap prompt notice:', e);
+        setLoading(false);
+        setError('Gagal memuat Google Sign-In.');
+        return;
+      }
     }
 
-    // 3. Fallback to Google Account Login for dev / testing environments
-    handleGoogleDemoLogin();
+    setLoading(false);
+    setError('Fitur Google Sign-In tidak didukung oleh browser Anda.');
   };
 
   const handleForgotPasswordSubmit = (e: React.FormEvent) => {

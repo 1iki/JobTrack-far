@@ -362,7 +362,7 @@ const Reminder = mongoose.model('Reminder', reminderSchema);
         return res.status(503).json({ error: 'MONGODB_URI belum dikonfigurasi di Environment Variables Vercel.' });
       }
       await ensureDBConnected();
-      const { credential, accessToken, googleUser } = req.body || {};
+      const { credential, accessToken } = req.body || {};
       let googlePayload: { sub?: string; email?: string; name?: string; picture?: string } | null = null;
 
       if (credential) {
@@ -405,14 +405,6 @@ const Reminder = mongoose.model('Reminder', reminderSchema);
         } catch (e) {
           console.warn('Google userinfo fetch warning:', e);
         }
-      } else if (googleUser && googleUser.email) {
-        // Fallback for dev/demo Google OAuth testing
-        googlePayload = {
-          sub: googleUser.googleId || 'google_demo_' + Date.now(),
-          email: googleUser.email,
-          name: googleUser.name || googleUser.email.split('@')[0],
-          picture: googleUser.picture || 'https://lh3.googleusercontent.com/a/default-user=s96-c'
-        };
       }
 
       if (!googlePayload || !googlePayload.email) {

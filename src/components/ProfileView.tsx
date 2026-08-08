@@ -16,14 +16,14 @@ function Modal({ title, isOpen, onClose, children, onSave }: { title: string, is
     <AnimatePresence>
       {isOpen && (
         <div className="fixed inset-0 z-50 flex items-end md:items-center justify-center p-0 md:p-4">
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs" 
+            className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs"
             onClick={onClose}
           />
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: isMobileOrTablet ? '100%' : 15, scale: isMobileOrTablet ? 1 : 0.96 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: isMobileOrTablet ? '100%' : 15, scale: isMobileOrTablet ? 1 : 0.96 }}
@@ -661,7 +661,7 @@ export function ProfileView() {
                 className="text-blue-600 dark:text-blue-400 hover:text-blue-800 text-sm font-bold flex items-center gap-1 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity cursor-pointer"
                 title="Tambah Portofolio / Sosmed"
               >
-                <Plus className="w-4 h-4" /> Tambah
+                <Plus className="w-4 h-4" />
               </button>
             </div>
             <div className="space-y-4">
