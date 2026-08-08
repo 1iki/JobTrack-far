@@ -2,6 +2,9 @@
 
 **JobTracker by FAR** adalah aplikasi manajemen pelacakan lamaran kerja (job application tracker) dan hub portofolio profesional berbasis web. Aplikasi ini membantu pencari kerja mengorganisir riwayat lamaran, membuat pengingat jadwal interview, mengelola profil profesional, dan mengunduh CV secara terstruktur.
 
+# Preview Website
+** https://jobtracker-far.vercel.app/
+
 ---
 
 ## ✨ Fitur Utama
