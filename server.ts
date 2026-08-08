@@ -178,14 +178,43 @@ const Profile = mongoose.model('Profile', profileSchema);
 
 export const app = express();
 
+// Job and Reminder schemas (module-level, alongside User and Profile)
+const jobSchema = new mongoose.Schema({
+  userId: { type: String, required: true, index: true },
+  title: String,
+  company: String,
+  platform: String,
+  location: String,
+  expectedSalary: String,
+  dateApplied: String,
+  notes: String,
+  status: String,
+  url: String,
+  imageUrl: String
+}, { timestamps: true });
+jobSchema.set('toJSON', { virtuals: true, transform: (doc, ret: any) => { ret.id = ret._id; delete ret._id; delete ret.__v; } });
+
+const reminderSchema = new mongoose.Schema({
+  userId: { type: String, required: true, index: true },
+  jobId: String,
+  date: String,
+  title: String,
+  type: String,
+  completed: Boolean
+}, { timestamps: true });
+reminderSchema.set('toJSON', { virtuals: true, transform: (doc, ret: any) => { ret.id = ret._id; delete ret._id; delete ret.__v; } });
+
+const Job = mongoose.model('Job', jobSchema);
+const Reminder = mongoose.model('Reminder', reminderSchema);
+
 async function startServer() {
   const PORT = Number(process.env.PORT) || 3000;
 
   // SEC-004: Security headers via helmet
   app.use(helmet({
-    contentSecurityPolicy: false, // Disabled for SPA compatibility with inline scripts/styles
+    contentSecurityPolicy: false,
     crossOriginEmbedderPolicy: false,
-    crossOriginOpenerPolicy: { policy: 'same-origin-allow-popups' }, // For Google OAuth popup
+    crossOriginOpenerPolicy: { policy: 'same-origin-allow-popups' },
   }));
 
   // SEC-009: Limit request body size
@@ -201,16 +230,16 @@ async function startServer() {
 
   // SEC-003: Rate limiting for auth endpoints
   const authLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 menit
-    max: 15, // maks 15 request per window
+    windowMs: 15 * 60 * 1000,
+    max: 15,
     message: { error: 'Terlalu banyak percobaan login. Silakan coba lagi dalam 15 menit.' },
     standardHeaders: true,
     legacyHeaders: false,
   });
 
   const generalLimiter = rateLimit({
-    windowMs: 1 * 60 * 1000, // 1 menit
-    max: 100, // maks 100 request per menit
+    windowMs: 1 * 60 * 1000,
+    max: 100,
     message: { error: 'Terlalu banyak request. Silakan coba lagi nanti.' },
     standardHeaders: true,
     legacyHeaders: false,
@@ -240,7 +269,6 @@ async function startServer() {
       if (!user) {
         return res.status(401).json({ error: 'Sesi tidak valid atau telah berakhir.' });
       }
-      // SEC-010: Check token expiry
       if (user.tokenCreatedAt && (Date.now() - new Date(user.tokenCreatedAt).getTime() > TOKEN_MAX_AGE_MS)) {
         user.token = undefined;
         await user.save();
@@ -252,34 +280,6 @@ async function startServer() {
       res.status(500).json({ error: 'Gagal mengautentikasi permintaan' });
     }
   };
-
-const jobSchema = new mongoose.Schema({
-  userId: { type: String, required: true, index: true },
-  title: String,
-  company: String,
-  platform: String,
-  location: String,
-  expectedSalary: String,
-  dateApplied: String,
-  notes: String,
-  status: String,
-  url: String,
-  imageUrl: String
-}, { timestamps: true });
-jobSchema.set('toJSON', { virtuals: true, transform: (doc, ret: any) => { ret.id = ret._id; delete ret._id; delete ret.__v; } });
-
-const reminderSchema = new mongoose.Schema({
-  userId: { type: String, required: true, index: true },
-  jobId: String,
-  date: String,
-  title: String,
-  type: String,
-  completed: Boolean
-}, { timestamps: true });
-reminderSchema.set('toJSON', { virtuals: true, transform: (doc, ret: any) => { ret.id = ret._id; delete ret._id; delete ret.__v; } });
-
-const Job = mongoose.model('Job', jobSchema);
-const Reminder = mongoose.model('Reminder', reminderSchema);
 
   // --- Authentication Routes ---
   app.post('/api/auth/register', authLimiter, async (req, res) => {
