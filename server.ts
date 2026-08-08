@@ -7,7 +7,6 @@ import multer from 'multer';
 import helmet from 'helmet';
 import rateLimit from 'express-rate-limit';
 import { v2 as cloudinary } from 'cloudinary';
-import { createServer as createViteServer } from 'vite';
 import mongoose from 'mongoose';
 import crypto from 'crypto';
 
@@ -207,10 +206,7 @@ reminderSchema.set('toJSON', { virtuals: true, transform: (doc, ret: any) => { r
 const Job = mongoose.model('Job', jobSchema);
 const Reminder = mongoose.model('Reminder', reminderSchema);
 
-async function startServer() {
-  const PORT = Number(process.env.PORT) || 3000;
-
-  // SEC-004: Security headers via helmet
+// SEC-004: Security headers via helmet
   app.use(helmet({
     contentSecurityPolicy: false,
     crossOriginEmbedderPolicy: false,
@@ -764,12 +760,15 @@ async function startServer() {
 
   // Vite middleware / static serving for local development
   if (!process.env.VERCEL) {
+    const PORT = Number(process.env.PORT) || 3000;
     if (process.env.NODE_ENV !== "production") {
-      const vite = await createViteServer({
-        server: { middlewareMode: true },
-        appType: "spa",
-      });
-      app.use(vite.middlewares);
+      import('vite').then(async ({ createServer: createViteServer }) => {
+        const vite = await createViteServer({
+          server: { middlewareMode: true },
+          appType: "spa",
+        });
+        app.use(vite.middlewares);
+      }).catch(err => console.warn('Vite dev middleware notice:', err));
     } else {
       const distPath = path.join(process.cwd(), 'dist');
       app.use(express.static(distPath));
@@ -782,6 +781,3 @@ async function startServer() {
       console.log(`Server running on http://localhost:${PORT}`);
     });
   }
-}
-
-startServer();
