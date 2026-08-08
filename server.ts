@@ -214,7 +214,7 @@ async function startServer() {
   app.use(helmet({
     contentSecurityPolicy: false,
     crossOriginEmbedderPolicy: false,
-    crossOriginOpenerPolicy: { policy: 'same-origin-allow-popups' },
+    crossOriginOpenerPolicy: false, // Disabled COOP header to prevent blocking Google GSI/OAuth popup window.closed checks
   }));
 
   // SEC-009: Limit request body size
@@ -362,7 +362,8 @@ async function startServer() {
 
   app.post('/api/auth/google', authLimiter, async (req, res) => {
     try {
-      const { credential, accessToken, googleUser } = req.body;
+      await ensureDBConnected();
+      const { credential, accessToken, googleUser } = req.body || {};
       let googlePayload: { sub?: string; email?: string; name?: string; picture?: string } | null = null;
 
       if (credential) {
