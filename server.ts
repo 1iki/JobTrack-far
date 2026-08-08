@@ -1,5 +1,8 @@
 import dotenv from 'dotenv';
-dotenv.config();
+// Only load .env file in local dev — Vercel injects env vars natively
+if (!process.env.VERCEL) {
+  dotenv.config();
+}
 
 import express from 'express';
 import path from 'path';
