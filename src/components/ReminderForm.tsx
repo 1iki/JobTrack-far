@@ -11,6 +11,7 @@ interface ReminderFormProps {
 
 export function ReminderForm({ onClose, initialDate }: ReminderFormProps) {
   const { addReminder, jobs } = useAppContext();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [formData, setFormData] = useState<Partial<Reminder>>({
     title: '',
@@ -21,16 +22,23 @@ export function ReminderForm({ onClose, initialDate }: ReminderFormProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.title || !formData.date || !formData.type) return;
+    if (isSubmitting || !formData.title || !formData.date || !formData.type) return;
 
-    await addReminder({
-      title: formData.title,
-      type: formData.type as 'TES' | 'WAWANCARA' | 'DEADLINE',
-      date: new Date(formData.date).toISOString(),
-      jobId: formData.jobId || ''
-    });
+    setIsSubmitting(true);
+    try {
+      await addReminder({
+        title: formData.title,
+        type: formData.type as 'TES' | 'WAWANCARA' | 'DEADLINE',
+        date: new Date(formData.date).toISOString(),
+        jobId: formData.jobId || ''
+      });
 
-    onClose();
+      onClose();
+    } catch (err) {
+      console.error('Reminder form submit error:', err);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -110,11 +118,16 @@ export function ReminderForm({ onClose, initialDate }: ReminderFormProps) {
           </div>
 
           <div className="p-5 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50">
-            <button type="submit" form="reminder-form" className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm py-3 rounded-xl transition-colors shadow-xs cursor-pointer">
-              Simpan Pengingat (Set Alarm)
+            <button 
+              type="submit" 
+              form="reminder-form" 
+              disabled={isSubmitting}
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm py-3 rounded-xl transition-colors shadow-xs disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer"
+            >
+              {isSubmitting ? 'Menyimpan...' : 'Simpan Pengingat (Set Alarm)'}
             </button>
           </div>
         </motion.div>
       </div>
-    );
-  }
+  );
+}

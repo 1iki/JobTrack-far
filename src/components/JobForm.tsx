@@ -12,6 +12,7 @@ interface JobFormProps {
 
 export function JobForm({ jobToEdit, onClose }: JobFormProps) {
   const { addJob, updateJob } = useAppContext();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
   const [formData, setFormData] = useState<Partial<JobApplication>>({
     title: '',
@@ -44,12 +45,20 @@ export function JobForm({ jobToEdit, onClose }: JobFormProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (jobToEdit) {
-      await updateJob(jobToEdit.id, formData as JobApplication);
-    } else {
-      await addJob(formData as Omit<JobApplication, 'id'>);
+    if (isSubmitting) return;
+    setIsSubmitting(true);
+    try {
+      if (jobToEdit) {
+        await updateJob(jobToEdit.id, formData as JobApplication);
+      } else {
+        await addJob(formData as Omit<JobApplication, 'id'>);
+      }
+      onClose();
+    } catch (err) {
+      console.error('Job form submit error:', err);
+    } finally {
+      setIsSubmitting(false);
     }
-    onClose();
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
@@ -164,12 +173,17 @@ export function JobForm({ jobToEdit, onClose }: JobFormProps) {
           </div>
 
           <div className="p-5 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50">
-            <button type="submit" form="job-form" className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm py-3 rounded-xl transition-colors shadow-xs cursor-pointer">
-              {jobToEdit ? 'Simpan Perubahan' : 'Simpan Lamaran'}
+            <button 
+              type="submit" 
+              form="job-form" 
+              disabled={isSubmitting}
+              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm py-3 rounded-xl transition-colors shadow-xs disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 cursor-pointer"
+            >
+              {isSubmitting ? 'Menyimpan...' : (jobToEdit ? 'Simpan Perubahan' : 'Simpan Lamaran')}
             </button>
           </div>
         </motion.div>
       </div>
-    );
-  }
+  );
+}
 

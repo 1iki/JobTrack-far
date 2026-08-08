@@ -2,15 +2,35 @@ import React, { useState, useEffect, useRef } from 'react';
 import {
   User, Mail, Phone, MapPin, Briefcase, GraduationCap,
   Award, Users, FileText, ExternalLink, Calendar, Plus, Edit2, Download, X, Trash2,
-  Lock, ShieldCheck
+  Lock, ShieldCheck, Loader2
 } from 'lucide-react';
 import html2pdf from 'html2pdf.js';
 import { useAppContext } from '../store';
 
 import { motion, AnimatePresence } from 'motion/react';
 
-function Modal({ title, isOpen, onClose, children, onSave }: { title: string, isOpen: boolean, onClose: () => void, children: React.ReactNode, onSave: () => void }) {
+function Modal({ title, isOpen, onClose, children, onSave, isSaving }: { title: string, isOpen: boolean, onClose: () => void, children: React.ReactNode, onSave: () => void | Promise<void>, isSaving?: boolean }) {
+  const [submitting, setSubmitting] = useState(false);
   const isMobileOrTablet = typeof window !== 'undefined' ? window.innerWidth < 768 : false;
+
+  useEffect(() => {
+    if (!isOpen) {
+      setSubmitting(false);
+    }
+  }, [isOpen]);
+
+  const handleSaveClick = async () => {
+    if (submitting || isSaving) return;
+    setSubmitting(true);
+    try {
+      await onSave();
+      onClose();
+    } catch (err) {
+      console.error('Modal save error:', err);
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
     <AnimatePresence>
@@ -40,11 +60,22 @@ function Modal({ title, isOpen, onClose, children, onSave }: { title: string, is
               {children}
             </div>
             <div className="p-4 md:p-6 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-3 bg-slate-50/50 dark:bg-slate-800/50">
-              <button onClick={onClose} className="px-5 py-2.5 text-slate-600 dark:text-slate-300 font-bold hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl transition-colors cursor-pointer">
+              <button onClick={onClose} disabled={submitting || isSaving} className="px-5 py-2.5 text-slate-600 dark:text-slate-300 font-bold hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl transition-colors cursor-pointer disabled:opacity-50">
                 Batal
               </button>
-              <button onClick={() => { onSave(); onClose(); }} className="px-5 py-2.5 bg-blue-600 text-white font-bold hover:bg-blue-700 rounded-xl transition-colors shadow-xs cursor-pointer">
-                Simpan
+              <button 
+                onClick={handleSaveClick} 
+                disabled={submitting || isSaving}
+                className="px-5 py-2.5 bg-blue-600 text-white font-bold hover:bg-blue-700 rounded-xl transition-colors shadow-xs cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              >
+                {(submitting || isSaving) ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Menyimpan...
+                  </>
+                ) : (
+                  'Simpan'
+                )}
               </button>
             </div>
           </motion.div>

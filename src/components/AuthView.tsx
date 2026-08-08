@@ -206,6 +206,7 @@ export function AuthView({ onLogin }: { onLogin: (user: User, token: string) => 
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (loading) return;
     setError(null);
 
     if (!isLogin && !acceptedTerms) {

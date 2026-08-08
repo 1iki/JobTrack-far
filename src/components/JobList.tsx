@@ -12,6 +12,7 @@ export function JobList({ onEdit, onExport }: { onEdit: (job: JobApplication) =>
   const [filterStatus, setFilterStatus] = useState<JobStatus | 'ALL'>('ALL');
   const [mediaViewer, setMediaViewer] = useState<{ url?: string; imageUrl?: string } | null>(null);
   const [jobToDelete, setJobToDelete] = useState<JobApplication | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const statusCounts = useMemo(() => {
     const counts: Record<string, number> = {};
@@ -224,18 +225,28 @@ export function JobList({ onEdit, onExport }: { onEdit: (job: JobApplication) =>
               <div className="flex gap-3 justify-center pt-2">
                 <button
                   onClick={() => setJobToDelete(null)}
-                  className="px-5 py-2.5 bg-slate-100 text-slate-700 font-bold rounded-xl text-sm hover:bg-slate-200 transition-colors flex-1 cursor-pointer"
+                  disabled={isDeleting}
+                  className="px-5 py-2.5 bg-slate-100 text-slate-700 font-bold rounded-xl text-sm hover:bg-slate-200 transition-colors flex-1 cursor-pointer disabled:opacity-50"
                 >
                   Batal
                 </button>
                 <button
-                  onClick={() => {
-                    deleteJob(jobToDelete.id);
-                    setJobToDelete(null);
+                  onClick={async () => {
+                    if (isDeleting || !jobToDelete) return;
+                    setIsDeleting(true);
+                    try {
+                      await deleteJob(jobToDelete.id);
+                      setJobToDelete(null);
+                    } catch (err) {
+                      console.error(err);
+                    } finally {
+                      setIsDeleting(false);
+                    }
                   }}
-                  className="px-5 py-2.5 bg-red-600 text-white font-bold rounded-xl text-sm hover:bg-red-700 transition-colors flex-1 shadow-sm cursor-pointer"
+                  disabled={isDeleting}
+                  className="px-5 py-2.5 bg-red-600 text-white font-bold rounded-xl text-sm hover:bg-red-700 transition-colors flex-1 shadow-sm cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Hapus
+                  {isDeleting ? 'Menghapus...' : 'Hapus'}
                 </button>
               </div>
             </motion.div>
