@@ -9,3 +9,5 @@ coverage/
 client_secret_*.json
 *.pem
 *.key
+
+.vercel

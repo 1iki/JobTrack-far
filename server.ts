@@ -176,7 +176,7 @@ const Profile = mongoose.model('Profile', profileSchema);
 export const app = express();
 
 async function startServer() {
-  const PORT = process.env.PORT || 3000;
+  const PORT = Number(process.env.PORT) || 3000;
 
   // SEC-004: Security headers via helmet
   app.use(helmet({
