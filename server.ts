@@ -21,9 +21,6 @@ async function ensureDBConnected() {
   }
 }
 
-// Initial connection attempt on cold start
-ensureDBConnected().catch(err => console.warn('MongoDB cold start notice:', err?.message || err));
-
 // Define User Schema
 const userSchema = new mongoose.Schema({
   name: { type: String, required: true },
