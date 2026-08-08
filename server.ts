@@ -18,12 +18,11 @@ async function ensureDBConnected() {
     await mongoose.connect(mongoUri, { dbName: 'JobTrackerV1', serverSelectionTimeoutMS: 5000 });
   } else {
     console.warn('WARNING: MONGODB_URI is not set in environment!');
-    throw new Error('MONGODB_URI environment variable is not configured in Vercel environment.');
   }
 }
 
 // Initial connection attempt on cold start
-ensureDBConnected().catch(err => console.error('MongoDB cold start error:', err));
+ensureDBConnected().catch(err => console.warn('MongoDB cold start notice:', err?.message || err));
 
 // Define User Schema
 const userSchema = new mongoose.Schema({
@@ -359,6 +358,9 @@ const Reminder = mongoose.model('Reminder', reminderSchema);
 
   app.post('/api/auth/google', authLimiter, async (req, res) => {
     try {
+      if (!process.env.MONGODB_URI) {
+        return res.status(503).json({ error: 'MONGODB_URI belum dikonfigurasi di Environment Variables Vercel.' });
+      }
       await ensureDBConnected();
       const { credential, accessToken, googleUser } = req.body || {};
       let googlePayload: { sub?: string; email?: string; name?: string; picture?: string } | null = null;
