@@ -1,0 +1,8 @@
+{
+  "name": "JobTracker By Far",
+  "description": "Mobile-first job application tracker with analytics, calendar, and media support.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
