@@ -160,34 +160,33 @@ export function AuthView({ onLogin }: { onLogin: () => void }) {
                   <div className="w-2.5 h-2.5 rounded-full bg-green-400"></div>
                 </div>
                 <div className="bg-slate-900 rounded-md px-3 py-1 text-xs text-slate-400 font-medium flex-1 text-center font-mono">
-                  www.jobtracker.vercel.app
+                  www.jobtracker-far.vercel.app
                 </div>
               </div>
 
               <div className="relative rounded-xl overflow-hidden border border-slate-700/80 shadow-lg bg-slate-950">
-                <img 
+                <img
                   key={activeSlide}
-                  src={previewSlides[activeSlide].image} 
-                  alt={previewSlides[activeSlide].title} 
-                  className="w-full h-auto max-h-[320px] object-cover object-top rounded-xl transition-all duration-500" 
+                  src={previewSlides[activeSlide].image}
+                  alt={previewSlides[activeSlide].title}
+                  className="w-full h-auto max-h-[320px] object-cover object-top rounded-xl transition-all duration-500"
                 />
-                
+
                 {/* Slide Caption & Navigation Dots */}
                 <div className="absolute inset-x-0 bottom-0 p-3 bg-gradient-to-t from-slate-950/90 via-slate-950/70 to-transparent flex items-center justify-between">
                   <div className="space-y-0.5 text-left">
                     <p className="text-xs font-bold text-white tracking-tight">{previewSlides[activeSlide].title}</p>
                     <p className="text-[10px] text-slate-300 font-medium">{previewSlides[activeSlide].caption}</p>
                   </div>
-                  
+
                   {/* Dots Indicator */}
                   <div className="flex items-center gap-1.5 bg-slate-900/80 px-2 py-1 rounded-full border border-slate-800/60">
                     {previewSlides.map((_, index) => (
                       <button
                         key={index}
                         onClick={() => setActiveSlide(index)}
-                        className={`w-2 h-2 rounded-full transition-all cursor-pointer ${
-                          activeSlide === index ? 'bg-blue-500 w-4' : 'bg-slate-600 hover:bg-slate-400'
-                        }`}
+                        className={`w-2 h-2 rounded-full transition-all cursor-pointer ${activeSlide === index ? 'bg-blue-500 w-4' : 'bg-slate-600 hover:bg-slate-400'
+                          }`}
                         title={`Slide ${index + 1}`}
                       />
                     ))}

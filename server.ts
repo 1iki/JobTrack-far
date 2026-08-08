@@ -11,16 +11,19 @@ import { createServer as createViteServer } from 'vite';
 import mongoose from 'mongoose';
 import crypto from 'crypto';
 
-// Connect to MongoDB
-const mongoUri = process.env.MONGODB_URI;
-if (mongoUri) {
-  console.log('Attempting MongoDB connection to database "JobTrackerV1"...');
-  mongoose.connect(mongoUri, { dbName: 'JobTrackerV1', serverSelectionTimeoutMS: 5000 })
-    .then(() => console.log('Connected to MongoDB ("JobTrackerV1") successfully'))
-    .catch(err => console.error('MongoDB connection error:', err));
-} else {
-  console.warn('WARNING: MONGODB_URI is not set in environment!');
+// Connect to MongoDB with serverless connection reuse
+async function ensureDBConnected() {
+  if (mongoose.connection.readyState >= 1) return;
+  const mongoUri = process.env.MONGODB_URI;
+  if (mongoUri) {
+    await mongoose.connect(mongoUri, { dbName: 'JobTrackerV1', serverSelectionTimeoutMS: 5000 });
+  } else {
+    console.warn('WARNING: MONGODB_URI is not set in environment!');
+  }
 }
+
+// Initial connection attempt on cold start
+ensureDBConnected().catch(err => console.error('MongoDB cold start error:', err));
 
 // Define User Schema
 const userSchema = new mongoose.Schema({
@@ -206,6 +209,16 @@ async function startServer() {
   });
 
   app.use('/api/', generalLimiter);
+
+  // Auto-reconnect DB middleware for API endpoints
+  app.use('/api/', async (req, res, next) => {
+    try {
+      await ensureDBConnected();
+    } catch (err) {
+      console.error('DB middleware connection notice:', err);
+    }
+    next();
+  });
 
   // Middleware Autentikasi Pengguna (SEC-010: Token Expiry)
   const authenticateUser = async (req: any, res: any, next: any) => {
