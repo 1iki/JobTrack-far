@@ -381,10 +381,31 @@ export function ProfileView() {
     setIsExporting(true);
 
     // SEC-008: HTML sanitization helper to prevent XSS in PDF export
-    const esc = (str: string | undefined | null): string => {
-      if (!str) return '';
-      return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+    const esc = (str: any): string => {
+      if (str === null || str === undefined) return '';
+      return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
     };
+
+    // Detect incomplete profile fields to show warning modal after export
+    const missingFields: string[] = [];
+    if (!profile.name?.trim()) missingFields.push('Nama');
+    if (!profile.email?.trim()) missingFields.push('Email');
+    if (!profile.phone?.trim()) missingFields.push('No. Telepon');
+    if (!profile.location?.trim()) missingFields.push('Lokasi');
+    if (!profile.about?.trim()) missingFields.push('Tentang Saya');
+    if (!Array.isArray(profile.experiences) || profile.experiences.length === 0) missingFields.push('Pengalaman Kerja');
+    if (!Array.isArray(profile.education) || profile.education.length === 0) missingFields.push('Pendidikan');
+    if (!Array.isArray(profile.skills) || profile.skills.length === 0) missingFields.push('Kemampuan/Skills');
+    if (!Array.isArray(profile.certificates) || profile.certificates.length === 0) missingFields.push('Sertifikat');
+    if (!Array.isArray(profile.volunteering) || profile.volunteering.length === 0) missingFields.push('Organisasi & Relawan');
+
+    // Safely coerce arrays to prevent .map() on non-array values from DB
+    const safeExperiences = Array.isArray(profile.experiences) ? profile.experiences : [];
+    const safeEducation = Array.isArray(profile.education) ? profile.education : [];
+    const safeSkills = Array.isArray(profile.skills) ? profile.skills : [];
+    const safeCertificates = Array.isArray(profile.certificates) ? profile.certificates : [];
+    const safeVolunteering = Array.isArray(profile.volunteering) ? profile.volunteering : [];
+    const safeAbout = typeof profile.about === 'string' ? profile.about : '';
 
     const element = document.createElement('div');
     element.innerHTML = `
@@ -399,59 +420,60 @@ export function ProfileView() {
         <div style="margin-bottom: 24px;">
           <h2 style="font-size: 15px; font-weight: bold; text-transform: uppercase; border-bottom: 1px solid #000; padding-bottom: 4px; margin: 0 0 12px 0;">Tentang Saya</h2>
           <div style="font-size: 13px;">
-            ${(profile.about || '').split('\n').map((line: string) => `<p style="margin: 0 0 4px 0;">${esc(line)}</p>`).join('')}
+            ${safeAbout ? safeAbout.split('\n').map((line: string) => `<p style="margin: 0 0 4px 0;">${esc(line)}</p>`).join('') : '<p style="margin: 0; color: #999; font-style: italic;">Belum diisi</p>'}
           </div>
         </div>
 
-        ${profile.experiences?.length > 0 ? `
+        ${safeExperiences.length > 0 ? `
         <div style="margin-bottom: 24px;">
           <h2 style="font-size: 15px; font-weight: bold; text-transform: uppercase; border-bottom: 1px solid #000; padding-bottom: 4px; margin: 0 0 12px 0;">Pengalaman Kerja</h2>
-          ${profile.experiences.map((exp: any) => `
+          ${safeExperiences.map((exp: any) => `
           <div style="margin-bottom: 12px;">
-            <h3 style="font-size: 14px; font-weight: bold; margin: 0 0 2px 0;">${esc(exp.company)}</h3>
-            <p style="font-size: 13px; margin: 0;">${esc(exp.title)} | ${esc(exp.period)}</p>
+            <h3 style="font-size: 14px; font-weight: bold; margin: 0 0 2px 0;">${esc(exp?.company)}</h3>
+            <p style="font-size: 13px; margin: 0;">${esc(exp?.title)} | ${esc(exp?.period)}</p>
           </div>
           `).join('')}
         </div>` : ''}
 
-        ${profile.education?.length > 0 ? `
+        ${safeEducation.length > 0 ? `
         <div style="margin-bottom: 24px;">
           <h2 style="font-size: 15px; font-weight: bold; text-transform: uppercase; border-bottom: 1px solid #000; padding-bottom: 4px; margin: 0 0 12px 0;">Pendidikan</h2>
-          ${profile.education.map((edu: any) => `
+          ${safeEducation.map((edu: any) => `
           <div style="margin-bottom: 12px;">
-            <h3 style="font-size: 14px; font-weight: bold; margin: 0 0 2px 0;">${esc(edu.school)}</h3>
-            <p style="font-size: 13px; margin: 0;">${esc(edu.degree)} | ${esc(edu.period)}</p>
+            <h3 style="font-size: 14px; font-weight: bold; margin: 0 0 2px 0;">${esc(edu?.school)}</h3>
+            <p style="font-size: 13px; margin: 0;">${esc(edu?.degree)} | ${esc(edu?.period)}</p>
           </div>
           `).join('')}
         </div>` : ''}
 
+        ${safeSkills.length > 0 ? `
         <div style="margin-bottom: 24px;">
           <h2 style="font-size: 15px; font-weight: bold; text-transform: uppercase; border-bottom: 1px solid #000; padding-bottom: 4px; margin: 0 0 12px 0;">Kemampuan</h2>
           <div style="font-size: 13px;">
-            ${(profile.skills || []).map((s: string) => esc(s)).join(', ')}
+            ${safeSkills.map((s: any) => esc(s)).join(', ')}
           </div>
-        </div>
+        </div>` : ''}
         
-        <div style="page-break-before: always;"></div>
+        ${(safeCertificates.length > 0 || safeVolunteering.length > 0) ? '<div style="page-break-before: always;"></div>' : ''}
 
-        ${profile.certificates?.length > 0 ? `
+        ${safeCertificates.length > 0 ? `
         <div style="margin-bottom: 24px;">
           <h2 style="font-size: 15px; font-weight: bold; text-transform: uppercase; border-bottom: 1px solid #000; padding-bottom: 4px; margin: 0 0 12px 0;">Sertifikat</h2>
-          ${profile.certificates.map((cert: any) => `
+          ${safeCertificates.map((cert: any) => `
           <div style="margin-bottom: 12px;">
-            <h3 style="font-size: 14px; font-weight: bold; margin: 0 0 2px 0;">${esc(cert.title)}</h3>
-            <p style="font-size: 13px; margin: 0 0 2px 0;">${esc(cert.issuer)} | ${esc(cert.period)}</p>
+            <h3 style="font-size: 14px; font-weight: bold; margin: 0 0 2px 0;">${esc(cert?.title)}</h3>
+            <p style="font-size: 13px; margin: 0 0 2px 0;">${esc(cert?.issuer)} | ${esc(cert?.period)}</p>
           </div>
           `).join('')}
         </div>` : ''}
 
-        ${profile.volunteering?.length > 0 ? `
+        ${safeVolunteering.length > 0 ? `
         <div style="margin-bottom: 24px;">
           <h2 style="font-size: 15px; font-weight: bold; text-transform: uppercase; border-bottom: 1px solid #000; padding-bottom: 4px; margin: 0 0 12px 0;">Pengalaman Organisasi & Relawan</h2>
-          ${profile.volunteering.map((vol: any) => `
+          ${safeVolunteering.map((vol: any) => `
           <div style="margin-bottom: 12px;">
-            <h3 style="font-size: 14px; font-weight: bold; margin: 0 0 2px 0;">${esc(vol.role)}</h3>
-            <p style="font-size: 13px; margin: 0;">${esc(vol.organization)} | ${esc(vol.period)}</p>
+            <h3 style="font-size: 14px; font-weight: bold; margin: 0 0 2px 0;">${esc(vol?.role)}</h3>
+            <p style="font-size: 13px; margin: 0;">${esc(vol?.organization)} | ${esc(vol?.period)}</p>
           </div>
           `).join('')}
         </div>` : ''}
@@ -471,10 +493,16 @@ export function ProfileView() {
     html2pdf().from(element).set(opt).save().then(() => {
       document.body.removeChild(element);
       setIsExporting(false);
+      if (missingFields.length > 0) {
+        notifyError('Sebagian informasi belum terisi menyebabkan informasi hasil ekspor ke PDF kosong. Mohon isi lengkap.', 'Ekspor Berhasil — Profil Belum Lengkap');
+      } else {
+        notifySuccess('CV berhasil diekspor sebagai PDF!', 'Ekspor Berhasil');
+      }
     }).catch((err: any) => {
       console.error('PDF Export Error:', err);
       if (document.body.contains(element)) document.body.removeChild(element);
       setIsExporting(false);
+      notifyError('Gagal mengekspor profil ke PDF. Silakan coba lagi.', 'Ekspor Gagal');
     });
   };
 

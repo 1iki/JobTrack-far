@@ -79,15 +79,19 @@ function isValidEmail(email: string): boolean {
 }
 
 // AES-256 Encryption / Decryption for CV files
-if (!process.env.CV_ENCRYPTION_KEY) {
-  console.warn('WARNING: CV_ENCRYPTION_KEY is not set! Using default key (NOT safe for production).');
+let CV_ENCRYPTION_KEY: Buffer | null = null;
+if (process.env.CV_ENCRYPTION_KEY) {
+  CV_ENCRYPTION_KEY = crypto.scryptSync(
+    process.env.CV_ENCRYPTION_KEY,
+    process.env.CV_ENCRYPTION_SALT || crypto.createHash('sha256').update(process.env.CV_ENCRYPTION_KEY).digest('hex').slice(0, 16),
+    32
+  );
+} else {
+  console.warn('WARNING: CV_ENCRYPTION_KEY is not set! CV upload/download features will be disabled.');
 }
-const CV_ENCRYPTION_KEY = crypto.scryptSync(
-  process.env.CV_ENCRYPTION_KEY || 'jobtracker_default_cv_secret_key_2026',
-  'cv_salt_2026', 32
-);
 
 function encryptCVBuffer(buffer: Buffer): { encryptedData: string; iv: string } {
+  if (!CV_ENCRYPTION_KEY) throw new Error('CV_ENCRYPTION_KEY is not configured');
   const iv = crypto.randomBytes(16);
   const cipher = crypto.createCipheriv('aes-256-cbc', CV_ENCRYPTION_KEY, iv);
   const encrypted = Buffer.concat([cipher.update(buffer), cipher.final()]);
@@ -98,6 +102,7 @@ function encryptCVBuffer(buffer: Buffer): { encryptedData: string; iv: string } 
 }
 
 function decryptCVBuffer(encryptedData: string, ivHex: string): Buffer {
+  if (!CV_ENCRYPTION_KEY) throw new Error('CV_ENCRYPTION_KEY is not configured');
   const iv = Buffer.from(ivHex, 'hex');
   const encryptedBuffer = Buffer.from(encryptedData, 'base64');
   const decipher = crypto.createDecipheriv('aes-256-cbc', CV_ENCRYPTION_KEY, iv);
@@ -697,6 +702,9 @@ const Reminder = mongoose.model('Reminder', reminderSchema);
   // API Routes for Encrypted CVs
   app.post('/api/cv/upload', authenticateUser, cvUpload.single('file'), async (req: any, res) => {
     try {
+      if (!CV_ENCRYPTION_KEY) {
+        return res.status(503).json({ error: 'Fitur enkripsi CV belum dikonfigurasi. Hubungi administrator untuk set CV_ENCRYPTION_KEY.' });
+      }
       if (!req.file) {
         return res.status(400).json({ error: 'Tidak ada file CV yang diunggah' });
       }
